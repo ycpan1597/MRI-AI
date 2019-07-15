@@ -135,7 +135,10 @@ class unet(nn.Module):
         # final conv (without any concat)
         self.final = nn.Conv2d(filters[0], n_classes, 1)
         
-        self.testConv = nn.Conv2d(in_channels, n_classes, 1)
+        self.simpConv1 = unetConv2(in_channels, 32, 1)
+        self.simpConv2 = unetConv2(32, n_classes, 1)
+        
+        self.testConv = unetConv2(in_channels, n_classes, 1)
 
     def forward(self, inputs):
 #        conv1 = self.conv1(inputs)
@@ -159,7 +162,8 @@ class unet(nn.Module):
 #        final = self.final(up1)
 #
 #        return final
-        return self.testConv(inputs)
+        
+        return self.simpConv2(self.simpConv1(inputs))
 
 
 # unet 3*2

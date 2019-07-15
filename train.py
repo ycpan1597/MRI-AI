@@ -68,7 +68,7 @@ def train(args): # pp: args is a list of arguments
     elif args.arch == 'unet3d':
         model = unet3d(n_classes=n_classes, in_channels=1, n_filter=4)
 
-    #model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
+    model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
     model.cuda()
 
     # Check if model has custom optimizer / loss
@@ -109,9 +109,12 @@ def train(args): # pp: args is a list of arguments
             print("No checkpoint found at '{}'".format(args.resume))
 
     print('Start training from scratch!')
+    print('GPU not in use = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
+    
     for epoch in range(start_epoch, args.n_epoch):
+        print('Epoch num: ' + str(epoch)) # how are we changing the training set with each epoch?
         model.train() # "Sets the model in training mode"
-        for i, (images, labels) in enumerate(trainloader):
+        for i, (images, labels) in enumerate(trainloader): # why is it that there are 10 sets of images in each trainloader? 
             torch.cuda.empty_cache() # Preston added this in to try and clear up cache but it's not working
             print(i)
             images = Variable(images.cuda())
@@ -119,23 +122,27 @@ def train(args): # pp: args is a list of arguments
 
             
             outputs = model(images)
-#            loss = loss_fn(outputs, labels, weight=args.weight)
-#            optimizer.zero_grad()
-#            loss.backward()
-#            optimizer.step()
+            loss = loss_fn(outputs, labels, weight=args.weight)
+            print('loss = %5.3f' % loss.item())
+            print('GPU allocated = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
         
             
 
-#            if args.visdom:
-#                vis.line(
-#                    X=torch.ones((1, 1)).cpu() * i,
-#                    Y=torch.Tensor([loss.data[0]]).unsqueeze(0).cpu(),
-#                    win=loss_window,
-#                    update='append')
-#
-#            if (i+1) % 20 == 0:
-#                print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.data[0]))
+            if args.visdom:
+                vis.line(
+                    X=torch.ones((1, 1)).cpu() * i,
+                    Y=torch.Tensor([loss.data[0]]).unsqueeze(0).cpu(),
+                    win=loss_window,
+                    update='append')
 
+            if (i+1) % 20 == 0:
+                print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.data[0]))
+        
+        # evaluation isn't working yet
+        
 #        model.eval() # "Sets the model in eval mode"
 #        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
 #            images_val = Variable(images_val.cuda(), volatile=True)
@@ -183,7 +190,7 @@ if __name__ == '__main__':
                         help='Height of the input image')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=150,
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=5,
                         help='# of the epochs')
     parser.add_argument('--batch_size', nargs='?', type=int, default=64,
                         help='Batch Size')
@@ -195,7 +202,7 @@ if __name__ == '__main__':
                         help='Path to previous saved model to restart from')
     parser.add_argument('--visdom', nargs='?', type=bool, default=False,
                         help='Show visualization(s) on visdom | False by  default')
-    parser.add_argument('--data_dim', nargs='?', type=int, default=3,
+    parser.add_argument('--data_dim', nargs='?', type=int, default=2,
                         help='Dim of input data')
     args = parser.parse_args()
     train(args)
