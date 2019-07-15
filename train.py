@@ -68,23 +68,30 @@ def train(args): # pp: args is a list of arguments
     elif args.arch == 'unet3d':
         model = unet3d(n_classes=n_classes, in_channels=1, n_filter=4)
 
-    model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
+    #model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
     model.cuda()
 
     # Check if model has custom optimizer / loss
-    if hasattr(model.module, 'optimizer'):
-        optimizer = model.module.optimizer
-    else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.l_rate) #, momentum=0.99, weight_decay=5e-4)
-
-    if hasattr(model.module, 'loss'):
-        print('Using custom loss')
-        loss_fn = model.module.loss
-    else:
-        if args.data_dim == 2:
+#    if hasattr(model.module, 'optimizer'):
+#        optimizer = model.module.optimizer
+#    else:
+#        optimizer = torch.optim.Adam(model.parameters(), lr=args.l_rate) #, momentum=0.99, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.l_rate)
+    print('optimizer selected!')
+    
+#    if hasattr(model.module, 'loss'):
+#        print('Using custom loss')
+#        loss_fn = model.module.loss
+#    else:
+#        if args.data_dim == 2:
+#            loss_fn = cross_entropy2d
+#        else:
+#            loss_fn = cross_entropy3d
+    if args.data_dim == 2:
             loss_fn = cross_entropy2d
-        else:
-            loss_fn = cross_entropy3d
+    else:
+            loss_fn = cross_entropy3d  
+    print('loss function selected!')
 
     start_epoch = args.start_epoch
     best_iou = -100.0 # intersection over union (or Jaccard index)
@@ -105,18 +112,18 @@ def train(args): # pp: args is a list of arguments
     for epoch in range(start_epoch, args.n_epoch):
         model.train() # "Sets the model in training mode"
         for i, (images, labels) in enumerate(trainloader):
-            torch.cuda.empty_cache()
+            torch.cuda.empty_cache() # Preston added this in to try and clear up cache but it's not working
             print(i)
             images = Variable(images.cuda())
             labels = Variable(labels.cuda())
 
-            optimizer.zero_grad()
-            model.zero_grad()
-            outputs = model(images)
-            loss = loss_fn(input=outputs, target=labels, weight=args.weight)
-            loss.backward()
-            optimizer.step()
             
+            outputs = model(images)
+#            loss = loss_fn(outputs, labels, weight=args.weight)
+#            optimizer.zero_grad()
+#            loss.backward()
+#            optimizer.step()
+        
             
 
 #            if args.visdom:
@@ -163,6 +170,7 @@ def train(args): # pp: args is a list of arguments
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
+    parser.add_argument('--os', type=str, default = 'Mac', help = 'Either Mac or Windows')
     parser.add_argument('--arch', nargs='?', type=str, default='unet',
                         help='Architecture to use [\'fcn8s, unet, segnet etc\']')
     parser.add_argument('-w', '--weight', default=10, type=int)
