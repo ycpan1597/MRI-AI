@@ -107,9 +107,9 @@ def train(args): # pp: args is a list of arguments
                   .format(args.resume, checkpoint['epoch']))
         else:
             print("No checkpoint found at '{}'".format(args.resume))
-
-    print('Start training from scratch!')
+            
     print('GPU not in use = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
+    print('Start training from scratch!')
     
     for epoch in range(start_epoch, args.n_epoch):
         print('Epoch num: ' + str(epoch)) # how are we changing the training set with each epoch?
