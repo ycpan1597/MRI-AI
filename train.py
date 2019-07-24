@@ -143,20 +143,20 @@ def train(args): # pp: args is a list of arguments
         
         # evaluation isn't working yet
         
-#        model.eval() # "Sets the model in eval mode"
-#        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
-#            images_val = Variable(images_val.cuda(), volatile=True)
-#            labels_val = Variable(labels_val.cuda(), volatile=True)
-#
-#            outputs = model(images_val)
-#            pred = outputs.data.max(1)[1].cpu().numpy()
-#            gt = labels_val.data.cpu().numpy()
-#            running_metrics.update(gt, pred)
-#
-#        score, class_iou = running_metrics.get_scores()
-#        for k, v in score.items():
-#            print(k, v)
-#        running_metrics.reset()
+        model.eval() # "Sets the model in eval mode"
+        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
+            images_val = Variable(images_val.cuda(), volatile=True)
+            labels_val = Variable(labels_val.cuda(), volatile=True)
+
+            outputs = model(images_val)
+            pred = outputs.data.max(1)[1].cpu().numpy()
+            gt = labels_val.data.cpu().numpy()
+            running_metrics.update(gt, pred)
+
+        score, class_iou = running_metrics.get_scores()
+        for k, v in score.items():
+            print(k, v)
+        running_metrics.reset()
 #
 #        mean_iou = score['Mean IoU : \t']
 #        is_best = mean_iou > best_iou
