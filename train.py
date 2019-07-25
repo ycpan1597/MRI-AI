@@ -4,6 +4,8 @@ Adapted from https://github.com/meetshah1995/pytorch-semseg
 #hello from Shannon
 #hello from Preston as well
 
+#making more changes!
+
 import sys
 import torch
 import visdom
@@ -128,7 +130,6 @@ def train(args): # pp: args is a list of arguments
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
             
 
             if args.visdom:
@@ -144,7 +145,10 @@ def train(args): # pp: args is a list of arguments
         # evaluation isn't working yet
         
         model.eval() # "Sets the model in eval mode"
-        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
+        for pars in model.parameters():
+            pars.requires_grad=False
+        torch.cuda.empty_cache()
+        for i_val, (images_val, labels_val) in enumerate(valloader):
             images_val = Variable(images_val.cuda(), volatile=True)
             labels_val = Variable(labels_val.cuda(), volatile=True)
 
