@@ -75,7 +75,7 @@ class MRI3d(data.Dataset):
 
 class MRI(data.Dataset):
     def __init__(self, root, split='train', is_transform=False,
-                 img_size=256, augmentations=None, numFiles = 6):
+                 img_size=256, augmentations=None, numFiles = 30):
         self.root = os.path.expanduser(root)
         self.is_transform = is_transform
         self.augmentations = augmentations

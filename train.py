@@ -31,9 +31,9 @@ def train(args): # pp: args is a list of arguments
     # Setup Dataloader
     if args.data_dim == 2:
         t_dataset = MRI(args.data, is_transform=True,
-                        img_size=(args.img_rows, args.img_cols))
+                        img_size=(args.img_rows, args.img_cols), numFiles = 30)
         v_dataset = MRI(args.data, split='val',
-                        is_transform=True, img_size=(args.img_rows, args.img_cols))
+                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 6)
     else:
         t_dataset = MRI3d(args.data, is_transform=True)
         v_dataset = MRI3d(args.data, split='val', is_transform=True)
@@ -119,16 +119,17 @@ def train(args): # pp: args is a list of arguments
         for i, (images, labels) in enumerate(trainloader): # why is it that there are 10 sets of images in each trainloader? 
             torch.cuda.empty_cache() # Preston added this in to try and clear up cache but it's not working
             print(i)
-            images = Variable(images.cuda())
+            images = Variable(images.cuda(), requires_grad=True)
             labels = Variable(labels.cuda())
 
-            optimizer.zero_grad()
+
             outputs = model(images)
 #            loss = loss_fn(outputs, labels)
             loss = criterion(outputs, labels)
             print('loss = %5.3f' % loss.item())
             print('GPU allocated = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
 
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
@@ -140,8 +141,8 @@ def train(args): # pp: args is a list of arguments
                     win=loss_window,
                     update='append')
 
-            if (i+1) % 20 == 0:
-                print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.data[0]))
+            if (i+1) % 20 == 0: #giving an update every 20 files?
+                print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.item()))
         
         # evaluation isn't working yet
         
@@ -150,39 +151,40 @@ def train(args): # pp: args is a list of arguments
 #            pars.requires_grad=False
 #        torch.cuda.empty_cache()
         for i_val, (images_val, labels_val) in enumerate(valloader):
-            images_val = Variable(images_val.cuda(), volatile=True)
-            labels_val = Variable(labels_val.cuda(), volatile=True)
+            torch.cuda.empty_cache()
+            images_val = Variable(images_val.cuda(), requires_grad=False)
+            labels_val = Variable(labels_val.cuda(), requires_grad=False)
 
             outputs = model(images_val)
             
-            # for pars in model.parameters():
-            #     pars.requires_grad=False
+            for pars in model.parameters():
+                 pars.requires_grad=False
             
             pred = outputs.data.max(1)[1].cpu().numpy()
             gt = labels_val.data.cpu().numpy()
             running_metrics.update(gt, pred)
-            torch.cuda.empty_cache()
+
 
         score, class_iou = running_metrics.get_scores()
         for k, v in score.items():
             print(k, v)
         running_metrics.reset()
-#
-#        mean_iou = score['Mean IoU : \t']
-#        is_best = mean_iou > best_iou
-#        best_iou = max(mean_iou, best_iou)
-#
-#        modelpath = os.path.join(args.checkpoint, '{}_model.pkl'.format(args.arch))
-#        bestpath = os.path.join(args.checkpoint, '{}_best_model.pkl'.format(args.arch))
-#        state = {'epoch': epoch+1,
-#                 'model_state': model.state_dict(),
-#                 'optimizer_state' : optimizer.state_dict(),
-#                 'mean_iou': mean_iou,
-#                 'best_iou': best_iou,}
-#        torch.save(state, modelpath)
-#
-#        if is_best:
-#            copyfile(modelpath, bestpath)
+
+        mean_iou = score['Mean IoU : \t']
+        is_best = mean_iou > best_iou
+        best_iou = max(mean_iou, best_iou)
+
+        modelpath = os.path.join(args.checkpoint, '{}_model.pkl'.format(args.arch))
+        bestpath = os.path.join(args.checkpoint, '{}_best_model.pkl'.format(args.arch))
+        state = {'epoch': epoch+1,
+                'model_state': model.state_dict(),
+                'optimizer_state' : optimizer.state_dict(),
+                'mean_iou': mean_iou,
+                'best_iou': best_iou,}
+        torch.save(state, modelpath)
+
+        if is_best:
+            copyfile(modelpath, bestpath)
 
 
 if __name__ == '__main__':
@@ -200,11 +202,11 @@ if __name__ == '__main__':
                         help='Height of the input image')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=5,
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=3,
                         help='# of the epochs')
     parser.add_argument('--batch_size', nargs='?', type=int, default=64,
                         help='Batch Size')
-    parser.add_argument('--l_rate', nargs='?', type=float, default=5e-4,
+    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-5,
                         help='Learning Rate')
     parser.add_argument('--feature_scale', nargs='?', type=int, default=1,
                         help='Divider for # of features to use')
