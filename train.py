@@ -88,10 +88,11 @@ def train(args): # pp: args is a list of arguments
 #            loss_fn = cross_entropy2d
 #        else:
 #            loss_fn = cross_entropy3d
-    if args.data_dim == 2:
-            loss_fn = cross_entropy2d
-    else:
-            loss_fn = cross_entropy3d  
+#    if args.data_dim == 2:
+#            loss_fn = cross_entropy2d
+#    else:
+#            loss_fn = cross_entropy3d
+    criterion = nn.CrossEntropyLoss()
     print('loss function selected!')
 
     start_epoch = args.start_epoch
@@ -121,12 +122,13 @@ def train(args): # pp: args is a list of arguments
             images = Variable(images.cuda())
             labels = Variable(labels.cuda())
 
-            
+            optimizer.zero_grad()
             outputs = model(images)
-            loss = loss_fn(outputs, labels, weight=args.weight)
+#            loss = loss_fn(outputs, labels)
+            loss = criterion(outputs, labels)
             print('loss = %5.3f' % loss.item())
             print('GPU allocated = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
-            optimizer.zero_grad()
+
             loss.backward()
             optimizer.step()
             
@@ -144,17 +146,17 @@ def train(args): # pp: args is a list of arguments
         # evaluation isn't working yet
         
         model.eval() # "Sets the model in eval mode"
-        for pars in model.parameters():
-            pars.requires_grad=False
-        torch.cuda.empty_cache()
+#        for pars in model.parameters():
+#            pars.requires_grad=False
+#        torch.cuda.empty_cache()
         for i_val, (images_val, labels_val) in enumerate(valloader):
             images_val = Variable(images_val.cuda(), volatile=True)
             labels_val = Variable(labels_val.cuda(), volatile=True)
 
             outputs = model(images_val)
             
-            for pars in model.parameters():
-                pars.requires_grad=False
+            # for pars in model.parameters():
+            #     pars.requires_grad=False
             
             pred = outputs.data.max(1)[1].cpu().numpy()
             gt = labels_val.data.cpu().numpy()

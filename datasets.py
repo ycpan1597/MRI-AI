@@ -80,7 +80,7 @@ class MRI(data.Dataset):
         self.is_transform = is_transform
         self.augmentations = augmentations
         self.split = split
-        self.n_classes = 2 # what does this refer to? 
+        self.n_classes = 21 # what does this refer to? 
         # self.mean = np.array([104.00699, 116.66877, 122.67892])
         # self.mean = 128
         # self.files = collections.defaultdict(list)
