@@ -158,10 +158,10 @@ def train(args): # pp: args is a list of arguments
             running_metrics.update(gt, pred)
             torch.cuda.empty_cache()
 
-#        score, class_iou = running_metrics.get_scores()
-#        for k, v in score.items():
-#            print(k, v)
-#        running_metrics.reset()
+        score, class_iou = running_metrics.get_scores()
+        for k, v in score.items():
+            print(k, v)
+        running_metrics.reset()
 #
 #        mean_iou = score['Mean IoU : \t']
 #        is_best = mean_iou > best_iou
