@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="37c85abb-1005-41ee-8fc4-56e0b22ce370" name="Default Changelist" comment="" />
+    <list default="true" id="37c85abb-1005-41ee-8fc4-56e0b22ce370" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,10 +15,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1140">
-              <caret line="159" lean-forward="true" selection-start-line="159" selection-end-line="159" />
+            <state relative-caret-position="1323">
+              <caret line="176" selection-start-line="176" selection-end-line="176" />
               <folding>
-                <element signature="e#69#79#0" expanded="true" />
+                <element signature="e#117#127#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -29,6 +31,9 @@
       <find>loss</find>
     </findStrings>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
@@ -36,18 +41,18 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="-7" />
     <option name="y" value="23" />
     <option name="width" value="1294" />
     <option name="height" value="820" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -59,9 +64,11 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunDashboard">
@@ -90,9 +97,9 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="23" width="1294" height="820" extended-state="0" />
+    <frame x="-8" y="-8" width="1456" height="876" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27070063" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23977433" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -114,10 +121,10 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1140">
-          <caret line="159" lean-forward="true" selection-start-line="159" selection-end-line="159" />
+        <state relative-caret-position="1323">
+          <caret line="176" selection-start-line="176" selection-end-line="176" />
           <folding>
-            <element signature="e#69#79#0" expanded="true" />
+            <element signature="e#117#127#0" expanded="true" />
           </folding>
         </state>
       </provider>
