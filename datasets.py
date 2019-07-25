@@ -80,7 +80,7 @@ class MRI(data.Dataset):
         self.is_transform = is_transform
         self.augmentations = augmentations
         self.split = split
-        self.n_classes = 2
+        self.n_classes = 2 # what does this refer to? 
         # self.mean = np.array([104.00699, 116.66877, 122.67892])
         # self.mean = 128
         # self.files = collections.defaultdict(list)
@@ -99,7 +99,7 @@ class MRI(data.Dataset):
             # Load data and labels
             img_data = nib.load(i).get_data()
             lab_data = nib.load(t).get_data()
-            img_data = np.asarray(img_data)
+            #img_data = np.asarray(img_data)
             # Reshape data for normalization
             # w, h, c = img_data.shape
             # img_data = img_data.reshape((w * h, -1))
@@ -111,17 +111,23 @@ class MRI(data.Dataset):
             # image_norm = (img_data - mean) / std
             # Create resized img slices
             
-            # This is so similar to "prepareNTU." Have a misunderstood? 
             
             for d in range(lab_data.shape[2]):
                 lab_slice = lab_data[:, :, d]
                 img_slice = img_data[:, :, d]
                 
+#                resizing all images to the same size
+                
                 img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
                 lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
                 
-                scaler = preprocessing.StandardScaler().fit(img_slice)
-                img_norm = scaler.transform(img_slice)# for some reason this is not used
+#                scaler = preprocessing.StandardScaler().fit(img_slice)
+#                img_norm = scaler.transform(img_slice)# for some reason this is not used
+                
+                # scaling (demeaning and reducing down to unit variance)
+                scaler = preprocessing.StandardScaler()
+                img_slice = scaler.fit_transform(img_slice)
+                lab_slice = scaler.fit_transform(lab_slice)
                 
                 self.images[split].append(img_slice)
                 self.labels[split].append(lab_slice)

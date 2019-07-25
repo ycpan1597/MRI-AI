@@ -4,7 +4,6 @@ Adapted from https://github.com/meetshah1995/pytorch-semseg
 #hello from Shannon
 #hello from Preston as well
 
-#making more changes!
 
 import sys
 import torch
@@ -60,7 +59,7 @@ def train(args): # pp: args is a list of arguments
     # Setup Model - model is a custom class
     if args.arch == 'unet':
         assert (args.img_cols == args.img_rows) and (args.img_cols == 256), 'Image size not match!'
-        model = unet(n_classes=n_classes, in_channels=1)
+        model = unet(n_classes=n_classes, in_channels=1) # n classes is defaulted to 2 in unet; in_channel is 1, referring to grayscale
     elif args.arch == 'unet3':
         assert (args.img_cols == args.img_rows) and (args.img_cols == 64), 'Image size not match!'
         model = unet3(n_classes=n_classes, in_channels=1)
