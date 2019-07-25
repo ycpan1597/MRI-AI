@@ -143,16 +143,21 @@ def train(args): # pp: args is a list of arguments
         
         # evaluation isn't working yet
         
-#        model.eval() # "Sets the model in eval mode"
-#        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
-#            images_val = Variable(images_val.cuda(), volatile=True)
-#            labels_val = Variable(labels_val.cuda(), volatile=True)
-#
-#            outputs = model(images_val)
-#            pred = outputs.data.max(1)[1].cpu().numpy()
-#            gt = labels_val.data.cpu().numpy()
-#            running_metrics.update(gt, pred)
-#
+        model.eval() # "Sets the model in eval mode"
+        for i_val, (images_val, labels_val) in tqdm(enumerate(valloader)):
+            images_val = Variable(images_val.cuda(), volatile=True)
+            labels_val = Variable(labels_val.cuda(), volatile=True)
+
+            outputs = model(images_val)
+            
+            for pars in model.parameters():
+                pars.requires_grad=False
+            
+            pred = outputs.data.max(1)[1].cpu().numpy()
+            gt = labels_val.data.cpu().numpy()
+            running_metrics.update(gt, pred)
+            torch.cuda.empty_cache()
+
 #        score, class_iou = running_metrics.get_scores()
 #        for k, v in score.items():
 #            print(k, v)
