@@ -33,9 +33,13 @@ class runningScore(object):
         """
         hist = self.confusion_matrix
         acc = np.diag(hist).sum() / hist.sum()
-        acc_cls = np.diag(hist) / hist.sum(axis=1)
+        # Shannon added
+        with np.errstate(divide='ignore', invalid='ignore'):
+            acc_cls = np.diag(hist) / hist.sum(axis=1)
+        #acc_cls = np.diag(hist) / hist.sum(axis=1)
         acc_cls = np.nanmean(acc_cls)
-        iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
         mean_iu = np.nanmean(iu)
         freq = hist.sum(axis=1) / hist.sum()
         fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()

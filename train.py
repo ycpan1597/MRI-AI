@@ -31,9 +31,9 @@ def train(args): # pp: args is a list of arguments
     # Setup Dataloader
     if args.data_dim == 2:
         t_dataset = MRI(args.data, is_transform=True,
-                        img_size=(args.img_rows, args.img_cols), numFiles = 30)
+                        img_size=(args.img_rows, args.img_cols), numFiles = 10)
         v_dataset = MRI(args.data, split='val',
-                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 6)
+                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 2)
     else:
         t_dataset = MRI3d(args.data, is_transform=True)
         v_dataset = MRI3d(args.data, split='val', is_transform=True)
@@ -202,11 +202,11 @@ if __name__ == '__main__':
                         help='Height of the input image')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=3,
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=6,
                         help='# of the epochs')
     parser.add_argument('--batch_size', nargs='?', type=int, default=64,
                         help='Batch Size')
-    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-5,
+    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-4,
                         help='Learning Rate')
     parser.add_argument('--feature_scale', nargs='?', type=int, default=1,
                         help='Divider for # of features to use')
