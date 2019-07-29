@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from torch.utils import data
 import pandas as pd
 import nibabel as nib
-from scipy.misc import imresize
+#from scipy.misc import imresize
 from sklearn import preprocessing
 
 
@@ -73,9 +73,10 @@ class MRI3d(data.Dataset):
         return img, lbl
 
 
+
 class MRI(data.Dataset):
     def __init__(self, root, split='train', is_transform=False,
-                 img_size=256, augmentations=None, numFiles = 100):
+                 img_size=256, augmentations=None, numFiles = 100, mode = 'train'):
         self.root = os.path.expanduser(root)
         self.is_transform = is_transform
         self.augmentations = augmentations
@@ -91,48 +92,81 @@ class MRI(data.Dataset):
         self.img_size = img_size if isinstance(img_size, tuple) \
                                                else (img_size, img_size)
 
-        df = pd.read_csv(pjoin(self.root, split + '.csv'))
-        
-        images = df['image'][:numFiles].tolist()
-        labels = df['label'][:numFiles].tolist()
-        for i, t in zip(images, labels):
-            # Load data and labels
-            img_data = nib.load(i).get_data()
-            lab_data = nib.load(t).get_data()
-            #img_data = np.asarray(img_data)
-            # Reshape data for normalization
-            # w, h, c = img_data.shape
-            # img_data = img_data.reshape((w * h, -1))
-            # scaler = preprocessing.StandardScaler().fit(img_data)
-            # image_norm = scaler.transform(img_data)
-            # image_norm = image_norm.reshape((w, h, c))
-            # mean = img_data.mean()
-            # std = img_data.std()
-            # image_norm = (img_data - mean) / std
-            # Create resized img slices
-            
-            
-            for d in range(lab_data.shape[2]):
-                lab_slice = lab_data[:, :, d]
-                img_slice = img_data[:, :, d]
-                
-#                resizing all images to the same size
-                
-                img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
-                lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
-                
-#                scaler = preprocessing.StandardScaler().fit(img_slice)
-#                img_norm = scaler.transform(img_slice)# for some reason this is not used
-                
-                # scaling (demeaning and reducing down to unit variance)
-                scaler = preprocessing.StandardScaler()
-                img_slice = scaler.fit_transform(img_slice)
-                lab_slice = scaler.fit_transform(lab_slice)
-                
-                self.images[split].append(img_slice)
-                self.labels[split].append(lab_slice)
 
-        print ('{} data is ready!'.format(split))
+        if mode == 'test':
+            # root test
+            images = os.listdir(os.path.join(root, 'image'))
+            labels = os.listdir(os.path.join(root, 'label'))
+            for index, (i, t) in enumerate(zip(images, labels)):
+                if i.endswith('nii') and t.endswith('nii') and index < 10:
+                    img_data = nib.load(os.path.join(root, 'image', i)).get_data()
+                    lab_data = nib.load(os.path.join(root, 'label', t)).get_data()
+                    
+                    for d in range(lab_data.shape[2]):
+                        lab_slice = lab_data[:, :, d]
+                        img_slice = img_data[:, :, d]
+                        
+        #                resizing all images to the same size
+                        
+                        img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
+                        lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
+                        
+        #                scaler = preprocessing.StandardScaler().fit(img_slice)
+        #                img_norm = scaler.transform(img_slice)# for some reason this is not used
+                        
+                        # scaling (demeaning and reducing down to unit variance)
+                        scaler = preprocessing.StandardScaler()
+                        img_slice = scaler.fit_transform(img_slice)
+                        lab_slice = scaler.fit_transform(lab_slice)
+                        
+                        self.images[split].append(img_slice)
+                        self.labels[split].append(lab_slice)
+            print('Test data is ready!')
+                    
+        else: 
+            
+            df = pd.read_csv(pjoin(self.root, split + '.csv'))
+            
+            images = df['image'][:numFiles].tolist()
+            labels = df['label'][:numFiles].tolist()
+            for i, t in zip(images, labels):
+                # Load data and labels
+                img_data = nib.load(i).get_data()
+                lab_data = nib.load(t).get_data()
+                #img_data = np.asarray(img_data)
+                # Reshape data for normalization
+                # w, h, c = img_data.shape
+                # img_data = img_data.reshape((w * h, -1))
+                # scaler = preprocessing.StandardScaler().fit(img_data)
+                # image_norm = scaler.transform(img_data)
+                # image_norm = image_norm.reshape((w, h, c))
+                # mean = img_data.mean()
+                # std = img_data.std()
+                # image_norm = (img_data - mean) / std
+                # Create resized img slices
+                
+                
+                for d in range(lab_data.shape[2]):
+                    lab_slice = lab_data[:, :, d]
+                    img_slice = img_data[:, :, d]
+                    
+    #                resizing all images to the same size
+                    
+                    img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
+                    lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
+                    
+    #                scaler = preprocessing.StandardScaler().fit(img_slice)
+    #                img_norm = scaler.transform(img_slice)# for some reason this is not used
+                    
+                    # scaling (demeaning and reducing down to unit variance)
+                    scaler = preprocessing.StandardScaler()
+                    img_slice = scaler.fit_transform(img_slice)
+                    lab_slice = scaler.fit_transform(lab_slice)
+                    
+                    self.images[split].append(img_slice)
+                    self.labels[split].append(lab_slice)
+    
+            print ('{} data is ready!'.format(split))
 
 
     def __len__(self):

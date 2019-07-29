@@ -31,9 +31,9 @@ def train(args): # pp: args is a list of arguments
     # Setup Dataloader
     if args.data_dim == 2:
         t_dataset = MRI(args.data, is_transform=True,
-                        img_size=(args.img_rows, args.img_cols), numFiles = 10)
+                        img_size=(args.img_rows, args.img_cols), numFiles = 200)
         v_dataset = MRI(args.data, split='val',
-                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 2)
+                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 40)
     else:
         t_dataset = MRI3d(args.data, is_transform=True)
         v_dataset = MRI3d(args.data, split='val', is_transform=True)
@@ -179,7 +179,10 @@ def train(args): # pp: args is a list of arguments
         is_best = mean_iou > best_iou
         best_iou = max(mean_iou, best_iou)
 
-        modelpath = os.path.join(args.checkpoint, '{}_model_train{}_val{}_lr{}__batchSize{}__epoch{}.pkl'.format(args.arch, args, args.tNum, args.vNum, args.l_rate, args.batch_size, args.n_epoch))
+#        modelpath = os.path.join(args.checkpoint, '{}_model_train{}_val{}_lr{}__batchSize{}__epoch{}.pkl'.format(args.arch, args, args.tNum, args.vNum, args.l_rate, args.batch_size, args.n_epoch))
+        
+
+        modelpath = os.path.join(args.checkpoint, '{}_model.pkl'.format(args.arch))
         bestpath = os.path.join(args.checkpoint, '{}_best_model.pkl'.format(args.arch))
         state = {'epoch': epoch+1,
                 'model_state': model.state_dict(),
@@ -187,7 +190,7 @@ def train(args): # pp: args is a list of arguments
                 'mean_iou': mean_iou,
                 'best_iou': best_iou,}
         torch.save(state, modelpath)
-        #torch.save(model.state_dict(), modelpath)
+#        torch.save(model.state_dict(), modelpath)
 
         if is_best:
             copyfile(modelpath, bestpath)
