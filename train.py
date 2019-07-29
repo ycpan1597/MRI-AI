@@ -39,8 +39,8 @@ def train(args): # pp: args is a list of arguments
         v_dataset = MRI3d(args.data, split='val', is_transform=True)
 
     n_classes = t_dataset.n_classes
-    trainloader = DataLoader(t_dataset, batch_size=args.batch_size, num_workers=8, shuffle=True)
-    valloader = DataLoader(v_dataset, batch_size=args.batch_size, num_workers=8)
+    trainloader = DataLoader(t_dataset, batch_size=args.batch_size, num_workers=0, shuffle=True)
+    valloader = DataLoader(v_dataset, batch_size=args.batch_size, num_workers=0)
 
     # Setup Metrics
     running_metrics = runningScore(n_classes)
@@ -113,12 +113,14 @@ def train(args): # pp: args is a list of arguments
     print('GPU not in use = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
     print('Start training from scratch!')
     
+    epochLoss = [] 
+    
+    
     for epoch in range(start_epoch, args.n_epoch):
         print('Epoch num: ' + str(epoch)) # how are we changing the training set with each epoch?
         model.train() # "Sets the model in training mode"
-        for i, (images, labels) in enumerate(trainloader): # why is it that there are 10 sets of images in each trainloader? 
+        for i, (images, labels) in enumerate(trainloader): 
             torch.cuda.empty_cache() # Preston added this in to try and clear up cache but it's not working
-            print(i)
             images = Variable(images.cuda(), requires_grad=True)
             labels = Variable(labels.cuda())
 
@@ -126,8 +128,7 @@ def train(args): # pp: args is a list of arguments
             outputs = model(images)
 #            loss = loss_fn(outputs, labels)
             loss = criterion(outputs, labels)
-            print('loss = %5.3f' % loss.item())
-            print('GPU allocated = %4.2f GB' % (torch.cuda.memory_allocated() / 1e9))
+            print('%.0fth batch: loss = %5.3f, GPU used = %4.2f GB' % (i + 1, loss.item(), (torch.cuda.memory_allocated() / 1e9)))
 
             optimizer.zero_grad()
             loss.backward()
@@ -140,16 +141,13 @@ def train(args): # pp: args is a list of arguments
                     Y=torch.Tensor([loss.data[0]]).unsqueeze(0).cpu(),
                     win=loss_window,
                     update='append')
-
-            if (i+1) % 20 == 0: #giving an update every 20 files?
-                print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.item()))
         
-        # evaluation isn't working yet
+        print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.item()))
+        
+        epochLoss.append(loss.item())
         
         model.eval() # "Sets the model in eval mode"
-#        for pars in model.parameters():
-#            pars.requires_grad=False
-#        torch.cuda.empty_cache()
+
         for i_val, (images_val, labels_val) in enumerate(valloader):
             torch.cuda.empty_cache()
             images_val = Variable(images_val.cuda(), requires_grad=False)
@@ -169,12 +167,19 @@ def train(args): # pp: args is a list of arguments
         for k, v in score.items():
             print(k, v)
         running_metrics.reset()
+             
+        
+        if len(epochLoss) > 4:
+            lastFour = epochLoss[-4:]
+            if abs(max(lastFour) - min(lastFour)) < 0.003:
+                print('Loss function is stagnant at {}th epoch, breaking from training'.format(epoch + 1))
+                break
 
         mean_iou = score['Mean IoU : \t']
         is_best = mean_iou > best_iou
         best_iou = max(mean_iou, best_iou)
 
-        modelpath = os.path.join(args.checkpoint, '{}_model.pkl'.format(args.arch))
+        modelpath = os.path.join(args.checkpoint, '{}_model_train{}_val{}_lr{}__batchSize{}__epoch{}.pkl'.format(args.arch, args, args.tNum, args.vNum, args.l_rate, args.batch_size, args.n_epoch))
         bestpath = os.path.join(args.checkpoint, '{}_best_model.pkl'.format(args.arch))
         state = {'epoch': epoch+1,
                 'model_state': model.state_dict(),
@@ -182,6 +187,7 @@ def train(args): # pp: args is a list of arguments
                 'mean_iou': mean_iou,
                 'best_iou': best_iou,}
         torch.save(state, modelpath)
+        #torch.save(model.state_dict(), modelpath)
 
         if is_best:
             copyfile(modelpath, bestpath)
@@ -189,24 +195,30 @@ def train(args): # pp: args is a list of arguments
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--os', type=str, default = 'Mac', help = 'Either Mac or Windows')
+
     parser.add_argument('--arch', nargs='?', type=str, default='unet',
                         help='Architecture to use [\'fcn8s, unet, segnet etc\']')
-    parser.add_argument('-w', '--weight', default=10, type=int)
-    parser.add_argument('-d', '--data', default='D:\\temp\\summer2019\\challenge', type=str)
-    parser.add_argument('-c', '--checkpoint', default='checkpoint', type=str, metavar='PATH',
+    parser.add_argument('--tNum', type=int, default=10, help='Number of training files to load')
+    parser.add_argument('--vNum', type=int, default=2, help='Number of validation files to load')
+    
+    parser.add_argument('-w', '--weight', type=int, default=10)
+    parser.add_argument('-d', '--data', type=str, default='D:\\temp\\summer2019\\challenge')
+    
+    # Not sure how this argument works
+    parser.add_argument('-c', '--checkpoint', type=str, default='checkpoint', metavar='PATH',
                     help='path to save checkpoint (default: checkpoint)')
+    
     parser.add_argument('--img_rows', nargs='?', type=int, default=256,
                         help='Height of the input image')
     parser.add_argument('--img_cols', nargs='?', type=int, default=256,
                         help='Height of the input image')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-    parser.add_argument('--n_epoch', nargs='?', type=int, default=6,
+    parser.add_argument('--n_epoch', nargs='?', type=int, default=10,
                         help='# of the epochs')
     parser.add_argument('--batch_size', nargs='?', type=int, default=64,
                         help='Batch Size')
-    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-4,
+    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-5,
                         help='Learning Rate')
     parser.add_argument('--feature_scale', nargs='?', type=int, default=1,
                         help='Divider for # of features to use')

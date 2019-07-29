@@ -25,7 +25,7 @@ from nibabel.data import get_data_path
 from utils import convert_state_dict
 
 from PIL import Image
-
+s
 try:
     import pydensecrf.densecrf as dcrf
 except:
@@ -49,6 +49,8 @@ def test(args):
     # Setup image
     print("Read Input Image from : {}".format(args.img_path))
     filenames = os.listdir(args.img_path)
+    
+    # we still need to read the image and label separately, right? 
 
     for filename in filenames:
         img = misc.imread(os.path.join(args.img_path, filename))
@@ -113,19 +115,22 @@ def test(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Params')
-    parser.add_argument('--model_path', nargs='?', type=str, default='unet_pascal_best_model.pkl', 
+    parser.add_argument('--model_path', nargs='?', type=str, default='D:\\temp\\summer2019\\ml-ntuh-001\\checkpoint', 
                         help='Path to the saved model')
+    
+    # What is this referring to? 
     parser.add_argument('--dataset', nargs='?', type=str, default='pascal', 
                         help='Dataset to use [\'pascal, camvid, ade20k etc\']')
+    
     parser.add_argument('--img_rows', nargs='?', type=int, default=256, 
                         help='Height of the input image')
     parser.add_argument('--img_cols', nargs='?', type=int, default=256, 
                         help='Height of the input image')
     parser.add_argument('--dcrf', nargs='?', type=str, default="False",
                         help='Enable DenseCRF based post-processing')
-    parser.add_argument('--img_path', nargs='?', type=str, default=None, 
+    parser.add_argument('--img_path', nargs='?', type=str, default='D:\\temp\\summer2019\\test\\image', 
                         help='Path of the input image')
-    parser.add_argument('--gt_path', nargs='?', type=str, default=None, 
+    parser.add_argument('--gt_path', nargs='?', type=str, default='D:\\temp\\summer2019\\test\\label, 
                         help='Path of the gt image')
     parser.add_argument('--out_path', nargs='?', type=str, default=None, 
                         help='Path of the output segmap')
