@@ -31,9 +31,9 @@ def train(args): # pp: args is a list of arguments
     # Setup Dataloader
     if args.data_dim == 2:
         t_dataset = MRI(args.data, is_transform=True,
-                        img_size=(args.img_rows, args.img_cols), numFiles = 200)
+                        img_size=(args.img_rows, args.img_cols), numFiles = args.tNum)
         v_dataset = MRI(args.data, split='val',
-                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = 40)
+                        is_transform=True, img_size=(args.img_rows, args.img_cols), numFiles = args.vNum)
     else:
         t_dataset = MRI3d(args.data, is_transform=True)
         v_dataset = MRI3d(args.data, split='val', is_transform=True)
@@ -48,13 +48,25 @@ def train(args): # pp: args is a list of arguments
     # Setup visdom for visualization
     if args.visdom:
         vis = visdom.Visdom()
+        
+        # Display all hyperparameters: 
+        vis.text('<b>Hyperparameters<\b><br>')
+#                 'learning rate: <br>'.format(args.l_rate),
+#                 'batchsize: {} frames<br>'.format(args.batch_size),
+#                 'number of epochs: {}<br>'.format(args.n_epoch))
 
         loss_window = vis.line(X=torch.zeros((1,)).cpu(),
-                           Y=torch.zeros((1)).cpu(),
-                           opts=dict(xlabel='minibatches',
-                                     ylabel='Loss',
-                                     title='Training Loss',
-                                     legend=['Loss']))
+                               Y=torch.zeros((1)).cpu(),
+                               opts=dict(xlabel='minibatches',
+                                         ylabel='Loss',
+                                         title='Training Loss',
+                                         legend=['Loss']))
+        epoch_loss_window = vis.line(X = torch.zeros((1,)).cpu(), 
+                                     Y = torch.zeros((1)).cpu(),
+                                     opts = dict(xlabel = 'epoch number',
+                                                 ylabel = 'loss',
+                                                 title = 'Training loss as a function of epoch number',
+                                                 legend = ['Loss']))
 
     # Setup Model - model is a custom class
     if args.arch == 'unet':
@@ -138,12 +150,19 @@ def train(args): # pp: args is a list of arguments
             if args.visdom:
                 vis.line(
                     X=torch.ones((1, 1)).cpu() * i,
-                    Y=torch.Tensor([loss.data[0]]).unsqueeze(0).cpu(),
+                    Y=torch.Tensor([loss.item()]).unsqueeze(0).cpu(),
                     win=loss_window,
                     update='append')
         
         print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.item()))
         
+        if args.visdom: 
+            vis.line(
+                    X = torch.ones((1, 1)).cpu() * epoch,
+                    Y=torch.Tensor([loss.item()]).unsqueeze(0).cpu(),
+                    win = epoch_loss_window,
+                    update = 'append')
+            
         epochLoss.append(loss.item())
         
         model.eval() # "Sets the model in eval mode"
@@ -204,7 +223,7 @@ if __name__ == '__main__':
     parser.add_argument('--tNum', type=int, default=10, help='Number of training files to load')
     parser.add_argument('--vNum', type=int, default=2, help='Number of validation files to load')
     
-    parser.add_argument('-w', '--weight', type=int, default=10)
+    parser.add_argument('-w', '--weight', type=int, default=10, help='weight for cross entropy loss calculation')
     parser.add_argument('-d', '--data', type=str, default='D:\\temp\\summer2019\\challenge')
     
     # Not sure how this argument works
@@ -228,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume', nargs='?', type=str, default=None,
                         help='Path to previous saved model to restart from')
     parser.add_argument('--visdom', nargs='?', type=bool, default=False,
-                        help='Show visualization(s) on visdom | False by  default')
+                        help='Show visualization(s) on visdom | False by default')
     parser.add_argument('--data_dim', nargs='?', type=int, default=2,
                         help='Dim of input data')
     args = parser.parse_args()

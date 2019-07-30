@@ -64,7 +64,7 @@ def test(args):
         # NHWC -> NCWH # what does this mean? 
         # N = number of images in the batch, H = height of the image, W = width of the image, C = number of channels of the image
         # https://stackoverflow.com/questions/37689423/convert-between-nhwc-and-nchw-in-tensorflow
-        img = img.transpose(2, 0, 1) 
+        img = img.transpose(2, 0, 1)
         img = np.expand_dims(img, 0)
         img = torch.from_numpy(img).float()
 
