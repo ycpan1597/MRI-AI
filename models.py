@@ -54,7 +54,7 @@ def conv_block_3_3d(in_dim, out_dim, act_fn):
 
 
 class unet3d(nn.Module):
-    def __init__(self, n_classes=21, in_channels=1, n_filter=4):
+    def __init__(self, n_classes=2, in_channels=1, n_filter=4):
         super(unet3d, self).__init__()
         act_fn = nn.LeakyReLU(0.2, inplace=True)
         
@@ -101,7 +101,7 @@ class unet3d(nn.Module):
     
 class unet(nn.Module):
 
-    def __init__(self, feature_scale=8, n_classes=21, is_deconv=True, in_channels=3, is_batchnorm=True):
+    def __init__(self, feature_scale=8, n_classes=1, is_deconv=True, in_channels=3, is_batchnorm=True):
         super(unet, self).__init__()
         self.is_deconv = is_deconv
         self.in_channels = in_channels
@@ -160,7 +160,7 @@ class unet(nn.Module):
 
 # unet 3*2 (a simplified unet)
 class unet3(nn.Module):
-    def __init__(self, feature_scale=4, n_classes=21, is_deconv=True, in_channels=3, is_batchnorm=True):
+    def __init__(self, feature_scale=4, n_classes=2, is_deconv=True, in_channels=3, is_batchnorm=True):
         super(unet3, self).__init__()
         self.is_deconv = is_deconv
         self.in_channels = in_channels
@@ -212,7 +212,7 @@ class unet3(nn.Module):
 
 class segnet(nn.Module):
 
-    def __init__(self, n_classes=21, in_channels=3, is_unpooling=True):
+    def __init__(self, n_classes=2, in_channels=3, is_unpooling=True):
         super(segnet, self).__init__()
 
         self.in_channels = in_channels

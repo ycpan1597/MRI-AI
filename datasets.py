@@ -3,76 +3,17 @@ Adapted from https://github.com/meetshah1995/pytorch-semseg
 """
 
 import os
-from os.path import join as pjoin
 import PIL
-import collections
 import torch
 import numpy as np
-import scipy.misc as m
-import matplotlib.pyplot as plt
-
-
-from torch.utils import data
+import collections
 import pandas as pd
 import nibabel as nib
-#from scipy.misc import imresize
+import matplotlib.pyplot as plt
+
+from torch.utils import data
+from os.path import join as pjoin
 from sklearn import preprocessing
-
-
-class MRI3d(data.Dataset):
-    def __init__(self, root, split='train', is_transform=False,
-                 augmentations=None):
-        self.root = os.path.expanduser(root)
-        self.is_transform = is_transform
-        self.augmentations = augmentations
-        self.split = split
-        self.n_classes = 5
-        # self.mean = np.array([104.00699, 116.66877, 122.67892])
-        # self.mean = 128
-        self.files = collections.defaultdict(list)
-
-        df = pd.read_csv(pjoin(self.root, split + '.csv'))
-        self.files[split] = df['patients'].tolist()
-
-
-    def __len__(self):
-        return len(self.files[self.split])
-
-    def __getitem__(self, index):
-        im_name = self.files[self.split][index] + '_t1ce.nii'
-        lbl_name = self.files[self.split][index] + '_seg.nii'
-
-        im_nii = nib.load(os.path.join(self.root, im_name))
-        lbl_nii = nib.load(os.path.join(self.root, lbl_name))
-        
-        im = np.array(im_nii.get_data())
-        lbl = np.array(lbl_nii.get_data())
-        lbl[lbl > 5] = 0
-        lbl[lbl < 0] = 0
-
-        im = np.resize(im, (240, 240, 152))   # this will affect the final mask? 
-                                              # (it should be resize back and maybe some error happens)
-        lbl = np.resize(lbl, (240, 240, 152))
-
-        if self.augmentations is not None:
-            im, lbl = self.augmentations(im, lbl)
-        if self.is_transform:
-            im, lbl = self.transform(im, lbl)
-        return im, lbl
-
-
-    def transform(self, img, lbl):
-        # NHWC -> NCWH
-        img = np.expand_dims(img, axis=0)
-
-        lbl = lbl.astype(int)
-        lbl = np.expand_dims(lbl, axis=0)
-
-        img = torch.from_numpy(img).float()
-        lbl = torch.from_numpy(lbl).long()
-        return img, lbl
-
-
 
 class MRI(data.Dataset):
     def __init__(self, root, split='train', is_transform=False,
@@ -81,10 +22,7 @@ class MRI(data.Dataset):
         self.is_transform = is_transform
         self.augmentations = augmentations
         self.split = split
-        self.n_classes = 21 # what does this refer to? 
-        # self.mean = np.array([104.00699, 116.66877, 122.67892])
-        # self.mean = 128
-        # self.files = collections.defaultdict(list)
+        self.n_classes = 1
         self.images = collections.defaultdict(list)
         # The line above creates a dictionary whose key is "split" and whose value
         # is a list of all the images or labels
@@ -105,22 +43,15 @@ class MRI(data.Dataset):
                     for d in range(lab_data.shape[2]):
                         lab_slice = lab_data[:, :, d]
                         img_slice = img_data[:, :, d]
-                        
-        #                resizing all images to the same size
-                        
-                        img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
-                        lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
-                        
-        #                scaler = preprocessing.StandardScaler().fit(img_slice)
-        #                img_norm = scaler.transform(img_slice)# for some reason this is not used
-                        
-                        # scaling (demeaning and reducing down to unit variance)
-                        scaler = preprocessing.StandardScaler()
-                        img_slice = scaler.fit_transform(img_slice)
-                        lab_slice = scaler.fit_transform(lab_slice)
-                        
-                        self.images[split].append(img_slice)
-                        self.labels[split].append(lab_slice)
+                        if np.count_nonzero(lab_slice) != 0:
+        #                   resizing all images to the same size
+                            img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
+                            lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
+                            scaler = preprocessing.StandardScaler()
+                            img_slice = scaler.fit_transform(img_slice)
+                            self.images[split].append(img_slice)
+                            self.labels[split].append(lab_slice)
+
             print('Test data is ready!')
                     
         else: 
@@ -129,45 +60,25 @@ class MRI(data.Dataset):
             
             images = df['image'][:numFiles].tolist()
             labels = df['label'][:numFiles].tolist()
-            for i, t in zip(images, labels):
+            for index, (i, l) in enumerate(zip(images, labels)):
+                if index % (int(len(images) / 10)) == 0:
+                    print('%.0f%% of %s files read' % ((index + 1) * 100 / len(images), split))
                 # Load data and labels
-                img_data = nib.load(i).get_data()
-                lab_data = nib.load(t).get_data()
-                #img_data = np.asarray(img_data)
-                # Reshape data for normalization
-                # w, h, c = img_data.shape
-                # img_data = img_data.reshape((w * h, -1))
-                # scaler = preprocessing.StandardScaler().fit(img_data)
-                # image_norm = scaler.transform(img_data)
-                # image_norm = image_norm.reshape((w, h, c))
-                # mean = img_data.mean()
-                # std = img_data.std()
-                # image_norm = (img_data - mean) / std
-                # Create resized img slices
-                
-                
-                for d in range(lab_data.shape[2]):
-                    lab_slice = lab_data[:, :, d]
-                    img_slice = img_data[:, :, d]
-                    
-    #                resizing all images to the same size
-                    
-                    img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
-                    lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).astype(np.float64)
-                    
-    #                scaler = preprocessing.StandardScaler().fit(img_slice)
-    #                img_norm = scaler.transform(img_slice)# for some reason this is not used
-                    
-                    # scaling (demeaning and reducing down to unit variance)
-                    scaler = preprocessing.StandardScaler()
-                    img_slice = scaler.fit_transform(img_slice)
-                    lab_slice = scaler.fit_transform(lab_slice)
-                    
-                    self.images[split].append(img_slice)
-                    self.labels[split].append(lab_slice)
+                img_slice = plt.imread(i)
+                lab_slice = plt.imread(l)
+
+                img_slice = np.array(PIL.Image.fromarray(img_slice).resize(img_size)).astype(np.float64)
+                lab_slice = np.array(PIL.Image.fromarray(lab_slice).resize(img_size, resample = PIL.Image.NEAREST)).\
+                                astype(np.float64)
+                scaler = preprocessing.StandardScaler()
+
+                img_slice = scaler.fit_transform(img_slice)
+                # lab_slice = scaler.fit_transform(lab_slice) # we don't normalize the label/gt-mask so that the output stays binarized
+
+                self.images[split].append(img_slice)
+                self.labels[split].append(lab_slice)
     
             print ('{} data is ready!'.format(split))
-
 
     def __len__(self):
         return len(self.images[self.split])
